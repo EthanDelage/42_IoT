@@ -23,6 +23,10 @@ Vagrant.configure("2") do |config|
       apt-get install -y curl
       curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=eth1" sh -
       cp /var/lib/rancher/k3s/server/node-token /vagrant
+      kubectl apply -f /vagrant/config/app1.yaml
+      kubectl apply -f /vagrant/config/app2.yaml
+      kubectl apply -f /vagrant/config/app3.yaml
+      kubectl apply -f /vagrant/config/ingress.yaml
     SHELL
   end
 end
