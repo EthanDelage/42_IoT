@@ -9,8 +9,8 @@ spec:
     server: https://kubernetes.default.svc
     namespace: dev
   source:
-    repoURL: https://github.com/EthanDelage/IoT_p3.git
-    path: ./
+    repoURL: https://github.com/EthanDelage/42_IoT.git
+    path: ./p3/app_config/
     targetRevision: HEAD
   syncPolicy:
     automated:
