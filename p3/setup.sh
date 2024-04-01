@@ -28,5 +28,6 @@ while true; do
     fi
 done
 
+kubectl wait --for=condition=Ready pod -n argocd --all
 kubectl apply -f myapp.yaml
 argocd admin initial-password -n argocd
