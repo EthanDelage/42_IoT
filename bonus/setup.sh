@@ -1,40 +1,5 @@
 #!/bin/bash
 
-# Argo CD web interface URL
-ARGOCD_URL="https://localhost:8080"
-
-# check_argocd_status() {
-#     response=$(curl -k -s -o /dev/null -w "%{http_code}" $ARGOCD_URL)
-
-#     if [ $response -eq 200 ]; then
-#         return 0
-#     else
-#         return 1
-#     fi
-# }
-
-# check_web_status(url) {
-#     response=$(curl -k -s -o /dev/null -w "%{http_code}" $url)
-
-#     if [ $response -eq 200 ]; then
-#         return 0
-#     else
-#         return 1
-#     fi
-# }
-
-# wait_web_status(url) {
-#     while true; do
-#         if check_web_status($url); then
-#             echo "$url is ready"
-#             break
-#         else
-#             echo "$url is not up yet, waiting..."
-#             sleep 10
-#         fi
-#     done
-# }
-
 k3d cluster create bonus -c k3d.yaml
 
 kubectl create namespace gitlab
@@ -61,6 +26,8 @@ done
 #kubectl wait --for=condition=Ready pod -n gitlab --all --timeout=600s
 kubectl get secret -n gitlab gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo
 
+
+bash setup_gitlab_repo.sh
 
 # kubectl create namespace argocd
 # kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
