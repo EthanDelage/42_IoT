@@ -45,13 +45,16 @@ wait_for_pods_ready "gitlab"
 # Display GitLab's initial root password
 kubectl get secret -n gitlab gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo
 
+# Setup port forwarding
+kubectl port-forward svc/gitlab-nginx-ingress-controller -n gitlab 443:443 2>&1 >/dev/null &
+
 # Run setup_gitlab_repo.sh script
 bash setup_gitlab_repo.sh
 
 # Uncomment for installing ArgoCD and deploying an application
-# kubectl create namespace argocd
-# kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-# kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
-# wait_for_pods_ready "argocd"
-# kubectl apply -f myapp.yaml
-# argocd admin initial-password -n argocd
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+wait_for_pods_ready "argocd"
+kubectl apply -f myapp.yaml
+argocd admin initial-password -n argocd
