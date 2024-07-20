@@ -1,0 +1,15 @@
+default:
+  provider: "virtualbox"
+  box_name: "debian/bookworm64"
+  vagrant_sync: "disabled"
+
+virtual_machines:
+  master:
+    hostname: "edelageS"
+    ip: "192.168.56.110"
+    memory: "2048"
+    cpus: "2"
+    files:
+      - "configs/:/home/vagrant/"
+    script:
+      path: "scripts/master.sh"
