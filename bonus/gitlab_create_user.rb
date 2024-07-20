@@ -24,5 +24,5 @@ u.save!
 
 # Create a personal access token
 token = u.personal_access_tokens.create(scopes: ['api', 'admin_mode'], name: 'personal_token', expires_at: 365.days.from_now)
-token.set_token('abcd1234')
+token.set_token(personal_access_token)
 token.save!

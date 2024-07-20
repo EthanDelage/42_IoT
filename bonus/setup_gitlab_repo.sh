@@ -4,20 +4,33 @@ source .env.example
 
 GITLAB_TOOLBOX_POD_NAME=$(kubectl get pods -lapp=toolbox -n gitlab -ojsonpath='{.items[0].metadata.name}')
 
-kubectl cp gitlab_create_user.rb gitlab/$GITLAB_TOOLBOX_POD_NAME:/tmp/test.rb
+kubectl cp gitlab_create_user.rb gitlab/$GITLAB_TOOLBOX_POD_NAME:/tmp/gitlab_create_user.rb
 kubectl exec -i -n gitlab $GITLAB_TOOLBOX_POD_NAME -- /bin/bash -c "\
         export GITLAB_USERNAME=$GITLAB_USERNAME &&\
         export GITLAB_EMAIL=$GITLAB_EMAIL &&\
         export GITLAB_NAME=$GITLAB_NAME &&\
         export GITLAB_PASSWORD=$GITLAB_PASSWORD &&\
         export GITLAB_PERSONAL_ACCESS_TOKEN=$GITLAB_PERSONAL_ACCESS_TOKEN &&\
-        /srv/gitlab/bin/rails runner /tmp/test.rb"
+        /srv/gitlab/bin/rails runner /tmp/gitlab_create_user.rb"
 
 JSON_RESPONSE=$(curl -k --request POST \
-        --header "PRIVATE-TOKEN: abcd1234" \
+        --header "PRIVATE-TOKEN: $GITLAB_PERSONAL_ACCESS_TOKEN" \
         --header "Content-Type: application/json" \
         --data '{"name": "webapp","description": "webapp","path": "webapp","namespace": "webapp","initialize_with_readme": "true"}' \
-        --url "https://gitlab.example.com:1080/api/v4/projects/")
+        --url "https://$GITLAB_URL/api/v4/projects/")
 
-HTTP_URL=$(echo $JSON_RESPONSE | jq -r '.http_url_to_repo')
+PROJECT_HTTP_URL=$(echo $JSON_RESPONSE | jq -r '.http_url_to_repo')
 SSH_URL=$(echo $JSON_RESPONSE | jq -r '.ssh_url_to_repo')
+
+git config --global user.name $GITLAB_USERNAME
+git config --global user.email $GITLAB_EMAIL
+git config --global credential.helper store
+echo -e "https://$GITLAB_USERNAME:$GITLAB_PERSONAL_ACCESS_TOKEN@$GITLAB_URL" >> ~/.git-credentials
+git config --global http.sslVerify false # Allow self signed certificate
+
+git init
+git remote add origin $PROJECT_HTTP_URL
+git add .
+git commit -m "feat: Initial commit"
+git push -u origin main
+
