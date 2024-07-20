@@ -1,0 +1,33 @@
+default:
+  provider: "virtualbox"
+  box_name: "debian/bookworm64"
+  vagrant_sync: "disabled"
+  memory: "2048"
+  cpus: "2"
+
+variables:
+  vagrant-home: "/home/vagrant"
+  shared-path: "{{variables.vagrant-home}}/shared"
+  node-token-path: "{{variables.shared-path}}/node-token"
+
+virtual_machines:
+  master:
+    hostname: "edelageS"
+    ip: "192.168.56.110"
+    sync_folders:
+      - "shared/:{{variables.shared-path}}"
+    script:
+      path: "scripts/master.sh"
+      env:
+        - NODE_TOKEN_PATH: "{{variables.node-token-path}}"
+
+  node:
+    hostname: "edelageSW"
+    ip: "192.168.56.111"
+    sync_folders:
+      - "shared/:{{variables.shared-path}}"
+    script:
+      path: "scripts/node.sh"
+      env:
+        - MASTER_IP: "{{virtual_machines.master.ip}}"
+        - NODE_TOKEN_PATH: "{{variables.node-token-path}}"

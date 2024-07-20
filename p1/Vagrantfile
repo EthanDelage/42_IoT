@@ -1,53 +1,103 @@
-Vagrant.configure("2") do |config|
+require 'yaml'
 
-  config.vm.define "edelageS" do |server|
-    server.vm.box = "debian/bookworm64"
+$settings = YAML.load_file(File.join(File.dirname(__FILE__), 'settings.yaml'))
 
-    server.vm.network "private_network", ip: "192.168.56.110"
-    server.vm.hostname = "edelageS"
+def get_settings
+  return $settings
+end
 
-    server.vm.synced_folder "./data", "/vagrant"
-
-    server.vm.provider "virtualbox" do |vb|
-      vb.memory = "1024"
-      vb.cpus = 1
-
-      vb.name = "edelageS"
-    end
-
-
-    server.vm.provision "shell", inline: <<-SHELL
-      sudo systemctl stop nftables
-      sudo systemctl disable nftables
-      apt-get update
-      apt-get install -y curl
-      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=eth1" sh -
-      cp /var/lib/rancher/k3s/server/node-token /vagrant
-    SHELL
+def configure_general_settings(vm, vm_settings)
+  vm.box = get_vm_setting('box_name', vm_settings)
+  vm.box_version = get_vm_setting('box_version', vm_settings)
+  if get_vm_setting('vagrant_sync', vm_settings) == 'disabled'
+    vm.synced_folder ".", "/vagrant", disabled: true
   end
+  vm.hostname = get_vm_setting('hostname', vm_settings)
+  vm.network "private_network", ip: get_vm_setting('ip', vm_settings)
+  vm.provider get_vm_setting('provider', vm_settings) do |provider|
+    provider.gui = false
+    provider.memory = get_vm_setting('memory', vm_settings)
+    provider.cpus = get_vm_setting('cpus', vm_settings)
+  end
+end
 
-  config.vm.define "edelageSW" do |worker|
-    worker.vm.box = "debian/bookworm64"
-
-    worker.vm.network "private_network", ip: "192.168.56.111"
-    worker.vm.hostname = "edelageSW"
-
-    worker.vm.synced_folder "./data", "/vagrant"
-
-    worker.vm.provider "virtualbox" do |vb|
-      vb.memory = "1024"
-      vb.cpus = 1
-
-      vb.name = "edelageSW"
+def synchronize_folders(vm, vm_settings)
+  unless vm_settings['sync_folders']
+    return nil
+  end
+  vm_settings['sync_folders'].each do |folder|
+    paths = folder.split(':', 2)
+    if paths.length == 2
+      source = interpolate_settings(paths[0])
+      destination = interpolate_settings(paths[1])
+      vm.synced_folder source, destination
     end
+  end
+end
 
+def provision_files(vm, vm_settings)
+  unless vm_settings['files']
+    return nil
+  end
+  vm_settings['files'].each do |file|
+    paths = file.split(':', 2)
+    if paths.length == 2
+      source = interpolate_settings(paths[0])
+      destination = interpolate_settings(paths[1])
+      vm.provision "file", source: source, destination: destination, run: "sudo"
+    end
+  end
+end
 
-    worker.vm.provision "shell", inline: <<-SHELL
-      sudo systemctl stop nftables
-      sudo systemctl disable nftables
-      apt-get update
-      apt-get install -y curl
-      curl -sfL https://get.k3s.io | K3S_URL=https://'192.168.56.110:6443' K3S_TOKEN_FILE='/vagrant/node-token' INSTALL_K3S_EXEC='--flannel-iface=eth1' sh -
-    SHELL
+def provision_script(vm, vm_settings)
+  unless vm_settings['script'] && vm_settings['script']['path']
+    return nil
+  end
+  environment_variables = {}
+  if vm_settings['script']['env']
+    vm_settings['script']['env'].map do |variable|
+      variable.map do |key, value|
+        environment_variables[key] = interpolate_settings(value)
+      end
+    end
+  end
+  path = interpolate_settings(vm_settings['script']['path'])
+  vm.provision "shell", path: path, env: environment_variables, privileged: true
+end
+
+def get_vm_setting(property, vm_settings)
+  return interpolate_settings(
+    vm_settings[property] || get_settings()['default'][property]
+  )
+end
+
+def interpolate_settings(value)
+  unless value
+    return value
+  end
+  return value.gsub(/{{(.*?)}}/) do
+    interpolate_settings(get_value_from_nested_keys(get_settings(), $1.strip))
+  end
+end
+
+def get_value_from_nested_keys(data, string)
+  keys = string.split('.')
+  keys.reduce(data) do |result, key|
+    if result && result.is_a?(Hash)
+      result[key]
+    else
+      nil
+    end
+  end
+end
+
+Vagrant.configure("2") do |config|
+  get_settings()['virtual_machines'].each do |vm_alias, vm_settings|
+    config.vm.define interpolate_settings(vm_settings['hostname']) do |machine|
+      configure_general_settings(machine.vm, vm_settings)
+      synchronize_folders(machine.vm, vm_settings)
+      provision_files(machine.vm, vm_settings)
+      provision_script(machine.vm, vm_settings)
+    end
   end
 end
