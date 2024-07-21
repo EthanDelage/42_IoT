@@ -9,7 +9,13 @@ wait_for_pods_ready() {
 
   while true; do
     completed_pods=$(kubectl get pods -n "$namespace" --field-selector=status.phase==Succeeded -o json | jq -r '.items | length')
-    ready_pods=$(kubectl get pods -n "$namespace" --field-selector=status.phase==Running -o json | jq -r '.items | length')
+    ready_pods=$(kubectl get pods -n "$namespace" -o json | jq -r '
+  .items[] |
+  select(
+    (.status.containerStatuses | map(select(.ready == true)) | length) == (.status.containerStatuses | length)
+  ) |
+  .metadata.name
+' | wc -l)
     total_pods=$(kubectl get pods -n "$namespace" -o json | jq -r '.items | length')
 
     if [ "$(($completed_pods + $ready_pods))" == "$total_pods" ]; then
