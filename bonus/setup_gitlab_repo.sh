@@ -16,7 +16,7 @@ kubectl exec -i -n gitlab $GITLAB_TOOLBOX_POD_NAME -- /bin/bash -c "\
 JSON_RESPONSE=$(curl -k --request POST \
         --header "PRIVATE-TOKEN: $GITLAB_PERSONAL_ACCESS_TOKEN" \
         --header "Content-Type: application/json" \
-        --data '{"name": "webapp","description": "webapp","path": "webapp","namespace": "webapp","initialize_with_readme": "true"}' \
+        --data '{"name": "webapp","description": "webapp","path": "webapp","namespace": "webapp","initialize_with_readme": "false", "visibility": "public"}' \
         --url "https://$GITLAB_URL/api/v4/projects/")
 
 PROJECT_HTTP_URL=$(echo $JSON_RESPONSE | jq -r '.http_url_to_repo')
@@ -24,13 +24,12 @@ SSH_URL=$(echo $JSON_RESPONSE | jq -r '.ssh_url_to_repo')
 
 git config --global user.name $GITLAB_USERNAME
 git config --global user.email $GITLAB_EMAIL
-git config --global credential.helper store
-echo -e "https://$GITLAB_USERNAME:$GITLAB_PERSONAL_ACCESS_TOKEN@$GITLAB_URL" >> ~/.git-credentials
+git config --global init.defaultBranch main
 git config --global http.sslVerify false # Allow self signed certificate
 
 git init
 git remote add origin $PROJECT_HTTP_URL
 git add .
 git commit -m "feat: Initial commit"
-git push -u origin main
+git push -u origin main http://$GITLAB_USERNAME:$GITLAB_PERSONAL_ACCESS_TOKEN@localhost:8181/$GITLAB_USERNAME/webapp.git
 

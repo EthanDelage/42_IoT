@@ -41,6 +41,8 @@ helm repo add gitlab https://charts.gitlab.io/
 helm install gitlab gitlab/gitlab \
   --set global.hosts.domain=example.com \
   --set global.hosts.externalIP=0.0.0.0 \
+  --set global.hosts.https=false \
+  --set global.hosts.gitlab.https=false \
   --set certmanager-issuer.email=me@example.com \
   --set gitlab-runner.install=false \
   --namespace gitlab
@@ -52,7 +54,8 @@ wait_for_pods_ready "gitlab"
 kubectl get secret -n gitlab gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo
 
 # Setup port forwarding
-kubectl port-forward svc/gitlab-nginx-ingress-controller -n gitlab 443:443 2>&1 >/dev/null &
+kubectl port-forward service/gitlab-webservice-default --address 0.0.0.0 -n gitlab 8181:8181 2>&1 >/dev/null &
+kubectl port-forward service/argocd-server --address 0.0.0.0 -n argocd 8080:443 2>&1 >/dev/null &
 
 # Run setup_gitlab_repo.sh script
 bash setup_gitlab_repo.sh
