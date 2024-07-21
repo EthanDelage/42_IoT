@@ -27,9 +27,8 @@ git config --global user.email $GITLAB_EMAIL
 git config --global init.defaultBranch main
 git config --global http.sslVerify false # Allow self signed certificate
 
-git init
-git remote add origin $PROJECT_HTTP_URL
+git init --initial-branch=main
 git add .
 git commit -m "feat: Initial commit"
-git push -u origin main http://$GITLAB_USERNAME:$GITLAB_PERSONAL_ACCESS_TOKEN@localhost:8181/$GITLAB_USERNAME/webapp.git
+git push http://$GITLAB_USERNAME:$GITLAB_PERSONAL_ACCESS_TOKEN@localhost:8181/$GITLAB_USERNAME/webapp.git
 
