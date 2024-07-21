@@ -42,7 +42,7 @@ helm install gitlab gitlab/gitlab \
   --set global.hosts.domain=example.com \
   --set global.hosts.externalIP=0.0.0.0 \
   --set certmanager-issuer.email=me@example.com \
-  --set gitlab-runner.runners.privileged=true \
+  --set gitlab-runner.install=false \
   --namespace gitlab
 
 # Wait until all pods in the gitlab namespace are ready
