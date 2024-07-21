@@ -17,7 +17,7 @@ JSON_RESPONSE=$(curl -k --request POST \
         --header "PRIVATE-TOKEN: $GITLAB_PERSONAL_ACCESS_TOKEN" \
         --header "Content-Type: application/json" \
         --data '{"name": "webapp","description": "webapp","path": "webapp","namespace": "webapp","initialize_with_readme": "false", "visibility": "public"}' \
-        --url "https://$GITLAB_URL/api/v4/projects/")
+        --url "http://localhost:8181/api/v4/projects/")
 
 PROJECT_HTTP_URL=$(echo $JSON_RESPONSE | jq -r '.http_url_to_repo')
 SSH_URL=$(echo $JSON_RESPONSE | jq -r '.ssh_url_to_repo')
