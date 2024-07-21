@@ -9,7 +9,7 @@ spec:
     server: https://kubernetes.default.svc
     namespace: dev
   source:
-    repoURL: http:/gitlab-webservice-default.gitlab.svc:8181//edelage/webapp.git
+    repoURL: http://gitlab-webservice-default.gitlab.svc:8181/edelage/webapp.git
     path: ./app_config/
     targetRevision: main
   syncPolicy:
