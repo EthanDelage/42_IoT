@@ -9,9 +9,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: dev
   source:
-    repoURL: https://gitlab.example.com/EthanDelage/webapp.git
-    path: ./bonus/app_config/
-    targetRevision: HEAD
+    repoURL: http://gitlab-webservice-default.gitlab.svc:8181/edelage/webapp.git
+    path: ./app_config/
+    targetRevision: main
   syncPolicy:
     automated:
       prune: true
